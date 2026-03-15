@@ -1,39 +1,81 @@
 #!/bin/bash
 
-# Exit if any command fails
+# -------------------------------------------------
+# Jenkins Automated Installation Script
+# Installs Java (OpenJDK 21) and Jenkins LTS
+# Compatible with Debian / Ubuntu systems
+# -------------------------------------------------
+
 set -e
 
-echo "📦 Updating packages..."
-sudo apt update -y
-sudo apt install -y fontconfig openjdk-17-jre
+echo "========================================="
+echo " Starting Jenkins Installation Setup "
+echo "========================================="
 
-echo "☕ Java version installed:"
+# ------------------------------
+# Step 1: Update Package Index
+# ------------------------------
+echo "[1/6] Updating system packages..."
+sudo apt update -y
+
+# ------------------------------
+# Step 2: Install Java
+# ------------------------------
+echo "[2/6] Installing OpenJDK 21..."
+sudo apt install -y fontconfig openjdk-21-jre
+
+echo "Checking Java installation..."
 java -version
 
-echo "🔑 Adding Jenkins GPG key..."
-curl -fsSL https://pkg.jenkins.io/debian/jenkins.io-2023.key | sudo tee \
-  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+# ------------------------------
+# Step 3: Add Jenkins Repository Key
+# ------------------------------
+echo "[3/6] Adding Jenkins repository key..."
 
-echo "📦 Adding Jenkins repo to sources.list.d..."
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-  https://pkg.jenkins.io/debian binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo mkdir -p /etc/apt/keyrings
 
-echo "🔄 Updating package list..."
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+
+# ------------------------------
+# Step 4: Add Jenkins Repository
+# ------------------------------
+echo "[4/6] Adding Jenkins repository..."
+
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] \
+https://pkg.jenkins.io/debian-stable binary/" | \
+sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+# ------------------------------
+# Step 5: Install Jenkins
+# ------------------------------
+echo "[5/6] Installing Jenkins..."
+
 sudo apt update -y
-
-echo "⬇️ Installing Jenkins..."
 sudo apt install -y jenkins
 
-echo "🚀 Starting Jenkins service..."
-sudo systemctl start jenkins
+# ------------------------------
+# Step 6: Start Jenkins Service
+# ------------------------------
+echo "[6/6] Enabling and starting Jenkins..."
+
 sudo systemctl enable jenkins
+sudo systemctl start jenkins
 
-echo "✅ Jenkins status:"
-sudo systemctl status jenkins | grep Active
+echo ""
+echo "========================================="
+echo " Jenkins Installation Completed "
+echo "========================================="
 
-echo "🌐 Jenkins is running on port 8080"
-echo "Make sure to open port 8080 in your AWS EC2 security group."
+echo "Checking Jenkins service status..."
+sudo systemctl status jenkins --no-pager
 
-echo "🔑 To unlock Jenkins, copy this initial admin password:"
+echo ""
+echo "Access Jenkins at:"
+echo "http://<your-server-ip>:8080"
+echo ""
+
+echo "Initial Admin Password:"
+echo "--------------------------------"
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+echo "--------------------------------"
